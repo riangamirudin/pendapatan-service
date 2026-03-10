@@ -38,11 +38,18 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
       topic,
       messages: [{ value }],
     };
+    // Debug: log sebelum produce
+    const payloadPreview = value.length > 400 ? `${value.slice(0, 400)}...` : value;
+    this.logger.debug(
+      `[Kafka produce] topic="${topic}" size=${value.length} bytes, payload: ${payloadPreview}`,
+    );
     try {
       await this.producer.send(record);
-      this.logger.debug(`Kafka message terkirim ke topic "${topic}"`);
+      this.logger.debug(`[Kafka produce] OK topic="${topic}" message terkirim`);
     } catch (err) {
-      this.logger.error(`Kafka send gagal (topic: ${topic}):`, (err as Error).message);
+      this.logger.error(
+        `[Kafka produce] GAGAL topic="${topic}" payload_preview=${payloadPreview.slice(0, 100)}... err=${(err as Error).message}`,
+      );
     }
   }
 }

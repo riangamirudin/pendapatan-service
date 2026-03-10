@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { StsRequestDto } from './dto/sts-request.dto';
 import { StsResponseDto } from './dto/sts-response.dto';
 import { StsPembatalanRequestDto } from './dto/sts-pembatalan-request.dto';
@@ -11,6 +17,7 @@ export const STS_TOPIC = 'pendapatan.sts.posted';
 
 @Injectable()
 export class StsService {
+  private readonly logger = new Logger(StsService.name);
   /** Simpan STS by no_sts (in-memory). */
   private readonly byNoSts = new Map<string, Sts>();
   /** Simpan STS by id_sts untuk cek duplikat. */
@@ -65,7 +72,7 @@ export class StsService {
     this.byIdSts.set(dto.id_sts, sts);
 
     // Kirim event ke Kafka (fire-and-forget)
-    this.kafkaService.emit(STS_TOPIC, {
+    const kafkaPayload = {
       event: 'sts.posted',
       id_sts: sts.id_sts,
       no_sts: sts.no_sts,
@@ -77,7 +84,11 @@ export class StsService {
       nomor_referensi: sts.nomor_referensi,
       workstation: sts.workstation,
       at: new Date().toISOString(),
-    });
+    };
+    this.logger.debug(
+      `[Kafka] Akan kirim ke topic "${STS_TOPIC}" event=sts.posted id_sts=${sts.id_sts} no_sts=${sts.no_sts}`,
+    );
+    this.kafkaService.emit(STS_TOPIC, kafkaPayload);
 
     return {
       id_sts: sts.id_sts,

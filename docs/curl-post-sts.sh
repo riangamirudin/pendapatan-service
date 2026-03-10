@@ -5,8 +5,8 @@
 curl -X POST http://localhost:3000/pendapatan/sts \
   -H "Content-Type: application/json" \
   -d '{
-    "id_sts": 40939,
-    "no_sts": "3316245000340100",
+    "id_sts": 9999,
+    "no_sts": "3316245000340300",
     "uraian": "RETRIBUSI PENYEDIAAN LAHAN PARKIR DI LUAR BADAN JALAN",
     "total": 442000,
     "list_id_tbp_bapenda": [800023, 800024],
