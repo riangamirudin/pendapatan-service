@@ -1,0 +1,854 @@
+openapi: 3.0.3
+info:
+  title: APBD Flow - API Dokumentasi
+  description: |
+    Dokumentasi API berdasarkan flow chart APBD (Anggaran Pendapatan dan Belanja Daerah).
+    Meliputi integrasi antar microservices: Pendapatan, Master Data, Reporting, Sipenari (Retribusi),
+    TTE, Bank Jateng, Order, dan Notification.
+  version: 1.0.0
+  contact:
+    name: Tim APBD
+
+servers:
+  - url: https://api.apbd.example.com
+    description: Server Produksi
+  - url: https://api-dev.apbd.example.com
+    description: Server Development
+
+tags:
+  - name: Pendapatan Service
+    description: Service utama pengelolaan pendapatan APBD
+  - name: Master Data Service
+    description: Data referensi (kode rekening, dll)
+  - name: Reporting Service
+    description: Laporan dari data operasional sistem
+  - name: Sipenari (Retribusi)
+    description: Data retribusi, objek retribusi, tarif
+  - name: TTE Service
+    description: Tanda tangan elektronik
+  - name: Bank Jateng Service
+    description: Transaksi pembayaran Bank Jateng
+  - name: Order Service
+    description: Cart, order, dan pembayaran
+  - name: Notification Service
+    description: Layanan notifikasi
+
+paths:
+  # ==================== PENDAPATAN SERVICE ====================
+  # /pendapatan/kode-rekening:
+  #   get:
+  #     tags: [Pendapatan Service]
+  #     summary: Get kode rekening
+  #     description: Mengambil kode rekening dari Master Data Service berdasarkan id_rab, id_lv6, id_ssk. Response berisi id dan uraian masing-masing.
+  #     operationId: getKodeRekening
+  #     parameters:
+  #       - name: id_rab
+  #         in: query
+  #         description: ID RAB
+  #         schema:
+  #           type: integer
+  #       - name: id_lv6
+  #         in: query
+  #         description: ID Level 6
+  #         schema:
+  #           type: integer
+  #       - name: id_ssk
+  #         in: query
+  #         description: ID SSK
+  #         schema:
+  #           type: integer
+  #     responses:
+  #       '200':
+  #         description: Data kode rekening (id dan uraian masing-masing)
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/KodeRekeningResponse'
+
+  /pendapatan/sts:
+    get:
+      tags: [Pendapatan Service]
+      summary: Get STS
+      description: Mendapatkan data STS (Surat Tanda Setoran) berdasarkan nomor STS
+      operationId: getSts
+      parameters:
+        - name: no_sts
+          in: query
+          required: true
+          description: Nomor STS
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Data STS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StsRequest'
+    post:
+      tags: [Pendapatan Service]
+      summary: Post STS
+      description: Mengirim data STS (Surat Tanda Setoran) ke Bank Jateng Service
+      operationId: postSts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StsRequest'
+      responses:
+        '201':
+          description: STS berhasil dikirim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StsResponse'
+
+  /pendapatan/sts/pembatalan:
+    post:
+      tags: [Pendapatan Service]
+      summary: Pembatalan STS
+      description: Proses pembatalan Surat Tanda Setoran
+      operationId: pembatalanSts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StsPembatalanRequest'
+      responses:
+        '200':
+          description: Pembatalan berhasil
+
+  /pendapatan/skr-tbp:
+    get:
+      tags: [Pendapatan Service]
+      summary: Get TBP
+      description: Mendapatkan data TBP (Tanda Bukti Penerimaan)
+      operationId: getTbp
+      parameters:
+        - name: no_tbp
+          in: query
+          required: true
+          description: Nomor TBP (Tanda Bukti Penerimaan)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Data TBP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TbpResponse'
+    post:
+      tags: [Pendapatan Service]
+      summary: Post TBP
+      description: Mengirim / membuat data TBP (Tanda Bukti Penerimaan)
+      operationId: postTbp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TbpRequest'
+      responses:
+        '201':
+          description: TBP berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TbpResponse'
+        '400':
+          description: Request tidak valid
+
+  /pendapatan/srk-tbp/batal:
+    post:
+      tags: [Pendapatan Service]
+      summary: Pembatalan TBP (SRK-TBP Batal)
+      description: Proses pembatalan TBP (Tanda Bukti Penerimaan) melalui SRK-TBP
+      operationId: srkTbpBatal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SrkTbpBatalRequest'
+      responses:
+        '200':
+          description: Pembatalan berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SrkTbpBatalResponse'
+
+  /pendapatan/koreksi:
+    put:
+      tags: [Pendapatan Service]
+      summary: Koreksi Pendapatan
+      description: Melakukan koreksi data pendapatan
+      operationId: koreksiPendapatan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KoreksiPendapatanRequest'
+      responses:
+        '200':
+          description: Koreksi berhasil
+
+  /pendapatan/verifikasi-pembayaran:
+    post:
+      tags: [Pendapatan Service]
+      summary: Verifikasi pembayaran
+      description: Memverifikasi status pembayaran
+      operationId: verifikasiPembayaran
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifikasiPembayaranRequest'
+      responses:
+        '200':
+          description: Hasil verifikasi
+
+  # ==================== MASTER DATA SERVICE ====================
+  /master-data/kode-rekening:
+    get:
+      tags: [Master Data Service]
+      summary: Get kode rekening
+      description: Mengelola data referensi kode rekening (RAB, Level 6, SSK) untuk service lain. Sesuai struktur SKR-TBP.
+      operationId: masterDataGetKodeRekening
+      parameters:
+        - name: id_rab
+          in: query
+          description: ID RAB
+          schema:
+            type: integer
+        - name: id_lv6
+          in: query
+          description: ID Level 6
+          schema:
+            type: integer
+        - name: id_ssk
+          in: query
+          description: ID SSK
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Data kode rekening (id dan uraian masing-masing)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KodeRekeningResponse'
+
+  # ==================== REPORTING SERVICE ====================
+  /reporting/insert-final-data:
+    post:
+      tags: [Reporting Service]
+      summary: Insert final data
+      description: Menyisipkan data final untuk laporan APBD. Mengolah data menjadi laporan informatif.
+      operationId: insertFinalData
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportingFinalDataRequest'
+      responses:
+        '201':
+          description: Data berhasil disisipkan
+
+  /reporting/laporan:
+    get:
+      tags: [Reporting Service]
+      summary: Generate laporan
+      description: Menghasilkan laporan dari data operasional (bergantung TTE Service, Belanja Service)
+      operationId: getLaporan
+      parameters:
+        - name: periode
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: jenis
+          in: query
+          schema:
+            type: string
+            enum: [pendapatan, belanja, apbd]
+      responses:
+        '200':
+          description: Laporan APBD
+
+  # ==================== SIPENARI (RETRIBUSI SERVICE) ====================
+  /sipenari/tbp-objek-retribusi:
+    post:
+      tags: [Sipenari (Retribusi)]
+      summary: Kirim TBP Objek Retribusi
+      description: Mengirim TBP (Tanda Bukti Penerimaan) objek retribusi. Sipenari mengelola data objek retribusi dan tarif.
+      operationId: kirimTbpObjekRetribusi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TbpObjekRetribusiRequest'
+      responses:
+        '201':
+          description: TBP objek retribusi terkirim
+
+  /sipenari/objek-retribusi:
+    get:
+      tags: [Sipenari (Retribusi)]
+      summary: Daftar objek retribusi
+      description: Data objek retribusi, tarif, dan ketentuan
+      operationId: getObjekRetribusi
+      responses:
+        '200':
+          description: Daftar objek retribusi
+
+  # ==================== TTE SERVICE ====================
+  /tte/send-signed-file:
+    post:
+      tags: [TTE Service]
+      summary: Send Signed File TTE (SIPENARI)
+      description: Mengirim dokumen yang telah ditandatangani elektronik. Terintegrasi dengan BSRE.
+      operationId: sendSignedFileTte
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                documentId:
+                  type: string
+      responses:
+        '200':
+          description: Dokumen TTE terkirim
+
+  /tte/queue:
+    post:
+      tags: [TTE Service]
+      summary: Queue TTE
+      description: Mengantrekan permintaan tanda tangan elektronik pada dokumen
+      operationId: queueTte
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueueTteRequest'
+      responses:
+        '202':
+          description: Permintaan TTE masuk antrean
+
+  /tte/queue/{queueId}:
+    get:
+      tags: [TTE Service]
+      summary: Status antrean TTE
+      operationId: getQueueTteStatus
+      parameters:
+        - name: queueId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Status dokumen yang akan/sudah ditandatangani
+
+  # ==================== BANK JATENG SERVICE ====================
+  /bank-jateng/billing:
+    post:
+      tags: [Bank Jateng Service]
+      summary: Post ID Billing
+      description: Mengirim data tagihan/transaksi ke sistem pembayaran Bank Jateng. Mengelola kode billing dan nomor referensi pembayaran.
+      operationId: bankJatengPostBilling
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdBillingRequest'
+      responses:
+        '201':
+          description: Billing tercatat, kode billing dikembalikan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdBillingResponse'
+
+  # ==================== ORDER SERVICE ====================
+  /order/cart/availability:
+    put:
+      tags: [Order Service]
+      summary: Update availability (Cart)
+      description: Memperbarui ketersediaan item di keranjang
+      operationId: updateCartAvailability
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAvailabilityRequest'
+      responses:
+        '200':
+          description: Ketersediaan diperbarui
+
+  /order/status:
+    put:
+      tags: [Order Service]
+      summary: Update status order
+      operationId: updateOrderStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrderStatusRequest'
+      responses:
+        '200':
+          description: Status order diperbarui
+
+  /order/payment:
+    post:
+      tags: [Order Service]
+      summary: Proses payment
+      description: Memproses pembayaran order
+      operationId: orderPayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderPaymentRequest'
+      responses:
+        '200':
+          description: Pembayaran diproses
+
+  # ==================== NOTIFICATION SERVICE ====================
+  /notification/send:
+    post:
+      tags: [Notification Service]
+      summary: Kirim notifikasi
+      description: Mengirim notifikasi ke user/pemangku kepentingan
+      operationId: sendNotification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+      responses:
+        '202':
+          description: Notifikasi terkirim
+
+components:
+  schemas:
+    KodeRekeningResponse:
+      type: object
+      description: Response kode rekening - id dan uraian untuk RAB, Level 6, dan SSK
+      properties:
+        id_rab:
+          type: integer
+          nullable: true
+          description: ID RAB
+        uraian_rab:
+          type: string
+          nullable: true
+          description: Uraian RAB
+        id_lv6:
+          type: integer
+          nullable: true
+          description: ID Level 6
+        uraian_lv6:
+          type: string
+          nullable: true
+          description: Uraian Level 6
+        id_ssk:
+          type: integer
+          nullable: true
+          description: ID SSK
+        uraian_ssk:
+          type: string
+          nullable: true
+          description: Uraian SSK
+
+    KodeRekening:
+      type: object
+      properties:
+        kode:
+          type: string
+        nama:
+          type: string
+        jenis:
+          type: string
+    KodeRekeningList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/KodeRekening'
+        total:
+          type: integer
+
+    StsRequest:
+      type: object
+      description: Data STS (Surat Tanda Setoran) yang dikirim
+      required: [id_sts, no_sts, uraian, total, list_id_tbp_bapenda, tanggal_sts, nomor_referensi, workstation]
+      properties:
+        id_sts:
+          type: integer
+          example: 40938
+        no_sts:
+          type: string
+          example: "3316245000040100"
+        uraian:
+          type: string
+          example: "RETRIBUSI PENYEDIAAN LAHAN PARKIR DI LUAR BADAN JALAN"
+        total:
+          type: number
+          example: 233000
+        list_id_tbp_bapenda:
+          type: array
+          items:
+            type: integer
+          example: [800023, 800024]
+        tanggal_sts:
+          type: string
+          format: date
+          example: "2026-03-09"
+        tanggal_setor:
+          type: string
+          format: date-time
+          example: "2026-03-09 20:27:17"
+        nomor_referensi:
+          type: string
+          example: "655303"
+        workstation:
+          type: string
+          example: "QZRCSRVS"
+
+    StsResponse:
+      type: object
+      description: Response setelah STS berhasil dikirim
+      properties:
+        id_sts:
+          type: integer
+        no_sts:
+          type: string
+        status:
+          type: string
+
+    IdBillingRequest:
+      type: object
+      required: [nomorReferensi, jumlah]
+      properties:
+        nomorReferensi:
+          type: string
+        jumlah:
+          type: number
+          format: double
+        keterangan:
+          type: string
+        idPendapatan:
+          type: string
+
+    IdBillingResponse:
+      type: object
+      properties:
+        idBilling:
+          type: string
+        kodeBilling:
+          type: string
+        status:
+          type: string
+
+    PembatalanRequest:
+      type: object
+      required: [idReferensi, alasan]
+      properties:
+        idReferensi:
+          type: string
+        alasan:
+          type: string
+
+    StsPembatalanRequest:
+      type: object
+      description: Input pembatalan STS
+      required: [id_sts, uraian]
+      properties:
+        id_sts:
+          type: integer
+          description: ID STS yang akan dibatalkan
+        uraian:
+          type: string
+          description: Uraian / alasan pembatalan
+
+    SrkTbpBatalRequest:
+      type: object
+      description: Input pembatalan TBP melalui SRK-TBP
+      required: [id_ptbp, no_ptbp, tanggal_pengajuan, uraian, total, list_id_tbp_bapenda]
+      properties:
+        id_ptbp:
+          type: integer
+          example: 19
+        no_ptbp:
+          type: string
+          example: "3356164000000102"
+        tanggal_pengajuan:
+          type: string
+          format: date
+          example: "2026-02-10"
+        uraian:
+          type: string
+          example: "Pembatalan TBP Pendapatan dikarenakan double input dan pada nomor sts 3326164000056301 dan 3326164000056401 sudah rekon namun belum disetorkan."
+        total:
+          type: number
+          example: 2156500
+        list_id_tbp_bapenda:
+          type: array
+          items:
+            type: integer
+          example: [740932, 746306, 746307, 746292, 747100, 749417, 749416]
+        tanggal_verifikasi:
+          type: string
+          format: date-time
+          example: "2026-02-11 10:33:50"
+
+    SrkTbpBatalResponse:
+      type: object
+      description: Response pembatalan SRK-TBP
+      properties:
+        id_ptbp:
+          type: integer
+          description: ID PTBP
+        no_ptbp:
+          type: string
+          description: Nomor PTBP
+        uraian:
+          type: string
+          description: Uraian
+
+    TbpRequest:
+      type: object
+      description: Input untuk membuat TBP (Tanda Bukti Penerimaan)
+      required: [jenis_dokumen, no_skr_bapenda, no_tbp_bapenda, org_id_grms, tanggal, uraian, total, rinci]
+      properties:
+        jenis_dokumen:
+          type: integer
+          example: 3
+        id_skr_bapenda:
+          type: integer
+          example: 796795
+        id_tbp_bapenda:
+          type: integer
+          example: 800023
+        no_skr_bapenda:
+          type: string
+          example: "3346245000189301"
+        no_tbp_bapenda:
+          type: string
+          example: "3326245000094901"
+        org_id_grms:
+          type: integer
+          example: 6245
+        tanggal:
+          type: string
+          format: date
+          example: "2026-03-09"
+        uraian:
+          type: string
+          example: "Pembayaran - Roda 2"
+        nama_penyetor:
+          type: string
+          example: "CASONO"
+        alamat_penyetor:
+          type: string
+          example: "WIROSARI DAMAI BLOK G NO. 30 RT 006 RW 007 SAMBONG BATANG"
+        npwp_penyetor:
+          type: string
+          example: "-"
+        tanggal_jatuh_tempo:
+          type: string
+          format: date
+          example: "2026-03-23"
+        total:
+          type: number
+          example: 209000
+        rinci:
+          type: array
+          items:
+            $ref: '#/components/schemas/TbpRinciItem'
+
+    TbpResponse:
+      type: object
+      description: Data TBP (Tanda Bukti Penerimaan)
+      properties:
+        jenis_dokumen:
+          type: integer
+          example: 3
+        id_skr_bapenda:
+          type: integer
+          example: 796795
+        id_tbp_bapenda:
+          type: integer
+          example: 800023
+        no_skr_bapenda:
+          type: string
+          example: "3346245000189301"
+        no_tbp_bapenda:
+          type: string
+          example: "3326245000094901"
+        org_id_grms:
+          type: integer
+          example: 6245
+        tanggal:
+          type: string
+          format: date
+          example: "2026-03-09"
+        uraian:
+          type: string
+          example: "Pembayaran - Roda 2"
+        nama_penyetor:
+          type: string
+          example: "CASONO"
+        alamat_penyetor:
+          type: string
+          example: "WIROSARI DAMAI BLOK G NO. 30 RT 006 RW 007 SAMBONG BATANG"
+        npwp_penyetor:
+          type: string
+          example: "-"
+        tanggal_jatuh_tempo:
+          type: string
+          format: date
+          example: "2026-03-23"
+        total:
+          type: number
+          example: 209000
+        rinci:
+          type: array
+          items:
+            $ref: '#/components/schemas/TbpRinciItem'
+
+    TbpRinciItem:
+      type: object
+      properties:
+        id_ssk_grms:
+          type: integer
+          nullable: true
+        id_rab_grms:
+          type: integer
+          nullable: true
+        id_lvl6_grms:
+          type: integer
+          example: 276
+        total_grms:
+          type: number
+          example: 209000
+
+    KoreksiPendapatanRequest:
+      type: object
+      properties:
+        idTransaksi:
+          type: string
+        nilaiKoreksi:
+          type: number
+        catatan:
+          type: string
+
+    VerifikasiPembayaranRequest:
+      type: object
+      properties:
+        idBilling:
+          type: string
+        kodeVerifikasi:
+          type: string
+
+    ReportingFinalDataRequest:
+      type: object
+      description: Data final untuk laporan (semua data APBD)
+      properties:
+        periode:
+          type: string
+          format: date
+        dataPendapatan:
+          type: array
+        dataBelanja:
+          type: array
+        metadata:
+          type: object
+
+    TbpObjekRetribusiRequest:
+      type: object
+      description: TBP objek retribusi - data objek retribusi, tarif, ketentuan
+      properties:
+        idObjekRetribusi:
+          type: string
+        nilai:
+          type: number
+        tbpId:
+          type: string
+
+    QueueTteRequest:
+      type: object
+      properties:
+        documentId:
+          type: string
+        documentType:
+          type: string
+        signerId:
+          type: string
+
+    UpdateAvailabilityRequest:
+      type: object
+      properties:
+        cartId:
+          type: string
+        itemId:
+          type: string
+        available:
+          type: boolean
+        quantity:
+          type: integer
+
+    UpdateOrderStatusRequest:
+      type: object
+      properties:
+        orderId:
+          type: string
+        status:
+          type: string
+          enum: [draft, submitted, paid, cancelled, completed]
+
+    OrderPaymentRequest:
+      type: object
+      properties:
+        orderId:
+          type: string
+        idBilling:
+          type: string
+        amount:
+          type: number
+
+    NotificationRequest:
+      type: object
+      properties:
+        channel:
+          type: string
+          enum: [email, sms, push, in_app]
+        recipient:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        metadata:
+          type: object
