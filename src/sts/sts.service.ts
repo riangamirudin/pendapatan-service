@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { StsRequestDto } from './dto/sts-request.dto';
 import { StsResponseDto } from './dto/sts-response.dto';
 import { StsPembatalanRequestDto } from './dto/sts-pembatalan-request.dto';
 import { Sts } from './entities/sts.entity';
+import { TbpService } from '../tbp/tbp.service';
 
 @Injectable()
 export class StsService {
@@ -10,6 +11,8 @@ export class StsService {
   private readonly byNoSts = new Map<string, Sts>();
   /** Simpan STS by id_sts untuk cek duplikat. */
   private readonly byIdSts = new Map<number, Sts>();
+
+  constructor(private readonly tbpService: TbpService) {}
 
   /**
    * Get STS berdasarkan nomor STS (operationId: getSts).
@@ -25,9 +28,15 @@ export class StsService {
 
   /**
    * Post STS - kirim data ke sistem (operationId: postSts).
-   * Request: StsRequest, Response: StsResponse (201).
+   * Relasi: list_id_tbp_bapenda harus refer ke id_tbp_bapenda TBP yang sudah ada.
    */
   postSts(dto: StsRequestDto): StsResponseDto {
+    const missing = this.tbpService.getMissingIdTbpBapenda(dto.list_id_tbp_bapenda ?? []);
+    if (missing.length > 0) {
+      throw new BadRequestException(
+        `list_id_tbp_bapenda tidak valid. Id TBP berikut tidak ditemukan: ${missing.join(', ')}. Buat TBP terlebih dahulu via POST /pendapatan/skr-tbp.`,
+      );
+    }
     if (this.byNoSts.has(dto.no_sts)) {
       throw new ConflictException(`STS dengan no_sts ${dto.no_sts} sudah ada`);
     }

@@ -5,5 +5,6 @@ import { TbpController } from './tbp.controller';
 @Module({
   controllers: [TbpController],
   providers: [TbpService],
+  exports: [TbpService],
 })
 export class TbpModule {}

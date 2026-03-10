@@ -754,15 +754,98 @@ components:
           type: number
           example: 209000
 
+    KoreksiRinciItem:
+      type: object
+      description: Item rinci koreksi (per kode level 6, jenis, nilai)
+      required: [kode_lvl6_id, jenis, nilai]
+      properties:
+        kode_lvl6_id:
+          type: integer
+          example: 12711
+        jenis:
+          type: integer
+          example: 1
+        nilai:
+          type: number
+          minimum: 0
+          example: 49000
+
+    KoreksiRinciTbpItem:
+      type: object
+      description: Item rinci TBP yang terkait koreksi
+      required: [id_tbp_grms, nomor_bukti, id_tbp_bapenda]
+      properties:
+        id_tbp_grms:
+          type: integer
+          example: 43538
+        nomor_bukti:
+          type: string
+          example: "3326164000063901"
+        id_tbp_bapenda:
+          type: integer
+          example: 751305
+
     KoreksiPendapatanRequest:
       type: object
+      description: Request body koreksi pendapatan (PUT /pendapatan/koreksi)
+      required:
+        - id_koreksi
+        - sts_id_grms
+        - no_surat
+        - tanggal
+        - keterangan
+        - user_input
+        - user_org_input
+        - user_verifikasi
+        - user_org_verifikasi
+        - total
+        - rinci
+        - rinci_tbp
       properties:
-        idTransaksi:
+        id_koreksi:
+          type: integer
+          example: 40
+        sts_id_grms:
+          type: integer
+          example: 24472
+        no_surat:
           type: string
-        nilaiKoreksi:
+          example: "900.1.13.1/058/2026"
+        tanggal:
+          type: string
+          format: date
+          example: "2026-02-18"
+        keterangan:
+          type: string
+          example: "denda bbnkb light truck di revisi menjadi denda pkb light truck karena salah input rekening pada sipenari"
+        user_input:
+          type: string
+          example: "DARA RAHISYA SURYA, S.Kom"
+        user_org_input:
+          type: string
+          example: "Badan Pengelola Pendapatan Daerah - Unit Pengelolaan Pendapatan Daerah Ungaran"
+        user_verifikasi:
+          type: string
+          example: "RIFKA APRIYANI, S.E."
+        user_org_verifikasi:
+          type: string
+          example: "Badan Pengelola Keuangan dan Aset Daerah - Bidang Akuntansi"
+        total:
           type: number
-        catatan:
+          minimum: 0
+          example: 49000
+        rinci:
+          type: array
+          items:
+            $ref: '#/components/schemas/KoreksiRinciItem'
+        rinci_tbp:
+          type: array
+          items:
+            $ref: '#/components/schemas/KoreksiRinciTbpItem'
+        tanggal_verifikasi:
           type: string
+          format: date-time
+          example: "2026-02-18 13:33:53"
 
     VerifikasiPembayaranRequest:
       type: object
