@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { StsController } from './sts.controller';
 import { StsService } from './sts.service';
 import { TbpService } from '../tbp/tbp.service';
+import { KafkaService } from '../kafka/kafka.service';
 
 describe('StsController', () => {
   let controller: StsController;
@@ -11,10 +12,8 @@ describe('StsController', () => {
       controllers: [StsController],
       providers: [
         StsService,
-        {
-          provide: TbpService,
-          useValue: { getMissingIdTbpBapenda: () => [] },
-        },
+        { provide: TbpService, useValue: { getMissingIdTbpBapenda: () => [] } },
+        { provide: KafkaService, useValue: { emit: jest.fn().mockResolvedValue(undefined) } },
       ],
     }).compile();
 

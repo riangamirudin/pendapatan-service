@@ -7,10 +7,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
-    .setTitle('Cats example')
-    .setDescription('The cats API description')
-    .setVersion('1.0')
-    .addTag('cats')
+    .setTitle('Pendapatan Service - APBD Flow')
+    .setDescription(
+      'API pengelolaan pendapatan APBD (Anggaran Pendapatan dan Belanja Daerah). Meliputi STS (Surat Tanda Setoran), TBP (Tanda Bukti Penerimaan), koreksi pendapatan, dan verifikasi pembayaran.',
+    )
+    .setVersion('1.0.0')
+    .addTag('Pendapatan Service', 'Endpoints utama pengelolaan pendapatan')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);

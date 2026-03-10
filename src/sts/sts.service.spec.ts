@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StsService } from './sts.service';
 import { TbpService } from '../tbp/tbp.service';
+import { KafkaService } from '../kafka/kafka.service';
 
 describe('StsService', () => {
   let service: StsService;
@@ -9,10 +10,8 @@ describe('StsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         StsService,
-        {
-          provide: TbpService,
-          useValue: { getMissingIdTbpBapenda: () => [] },
-        },
+        { provide: TbpService, useValue: { getMissingIdTbpBapenda: () => [] } },
+        { provide: KafkaService, useValue: { emit: jest.fn().mockResolvedValue(undefined) } },
       ],
     }).compile();
 

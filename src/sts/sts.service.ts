@@ -4,6 +4,10 @@ import { StsResponseDto } from './dto/sts-response.dto';
 import { StsPembatalanRequestDto } from './dto/sts-pembatalan-request.dto';
 import { Sts } from './entities/sts.entity';
 import { TbpService } from '../tbp/tbp.service';
+import { KafkaService } from '../kafka/kafka.service';
+
+/** Topic Kafka untuk event STS berhasil dikirim */
+export const STS_TOPIC = 'pendapatan.sts.posted';
 
 @Injectable()
 export class StsService {
@@ -12,7 +16,10 @@ export class StsService {
   /** Simpan STS by id_sts untuk cek duplikat. */
   private readonly byIdSts = new Map<number, Sts>();
 
-  constructor(private readonly tbpService: TbpService) {}
+  constructor(
+    private readonly tbpService: TbpService,
+    private readonly kafkaService: KafkaService,
+  ) {}
 
   /**
    * Get STS berdasarkan nomor STS (operationId: getSts).
@@ -56,6 +63,22 @@ export class StsService {
     };
     this.byNoSts.set(dto.no_sts, sts);
     this.byIdSts.set(dto.id_sts, sts);
+
+    // Kirim event ke Kafka (fire-and-forget)
+    this.kafkaService.emit(STS_TOPIC, {
+      event: 'sts.posted',
+      id_sts: sts.id_sts,
+      no_sts: sts.no_sts,
+      uraian: sts.uraian,
+      total: sts.total,
+      list_id_tbp_bapenda: sts.list_id_tbp_bapenda,
+      tanggal_sts: sts.tanggal_sts,
+      tanggal_setor: sts.tanggal_setor,
+      nomor_referensi: sts.nomor_referensi,
+      workstation: sts.workstation,
+      at: new Date().toISOString(),
+    });
+
     return {
       id_sts: sts.id_sts,
       no_sts: sts.no_sts,
