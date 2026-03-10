@@ -8,10 +8,10 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
   private producer: Producer;
 
   constructor() {
-    const brokers = (process.env.KAFKA_BROKERS ?? 'localhost:9092').split(',');
+    const brokers = (process.env.KAFKA_BROKERS ?? 'localhost:9094').split(',');
     this.kafka = new Kafka({
       clientId: 'pendapatan-service',
-      brokers,
+      brokers: brokers,
     });
     this.producer = this.kafka.producer();
   }
