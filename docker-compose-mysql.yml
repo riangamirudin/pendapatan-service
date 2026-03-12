@@ -1,0 +1,56 @@
+services:
+  mysql-write:
+    image: 8.0.45-debian
+    container_name: mysql-write
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: product_write
+      MYSQL_USER: user
+      MYSQL_PASSWORD: userpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-write-data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - cqrs-net
+
+  mysql-read:
+    image: mysql:8.0
+    container_name: mysql-read
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: product_read
+      MYSQL_USER: user
+      MYSQL_PASSWORD: userpassword
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-read-data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - cqrs-net
+
+  # TAMBAHAN: phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin
+    links:
+      - mysql-write
+      - mysql-read
+    environment:
+      # Menggunakan PMA_HOSTS (jamak) agar bisa akses kedua DB sekaligus
+      PMA_HOSTS: mysql-write,mysql-read
+      PMA_ARBITRARY: 1
+    ports:
+      - "8080:80"
+    networks:
+      - cqrs-net
+
+volumes:
+  mysql-write-data:
+  mysql-read-data:
+
+networks:
+  cqrs-net:
+    driver: bridge
